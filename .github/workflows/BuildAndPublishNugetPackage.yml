@@ -1,0 +1,52 @@
+name: Build and publish NuGet package
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+env:
+  WORKING_DIR: ./src
+  DOTNET_CORE_VERSION: 5.0.x
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
+
+      - name: Install dependencies
+        working-directory: ${{env.WORKING_DIR}}
+        run: dotnet restore
+
+      - name: Build
+        working-directory: ${{env.WORKING_DIR}}
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run tests
+        working-directory: ${{env.WORKING_DIR}}
+        run: dotnet test --no-build --verbosity normal
+
+  push:
+    needs: test
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get version
+        id: version
+        uses: battila7/get-version-action@v2
+
+      - name: Pack NuGet package(s)
+        working-directory: ${{env.WORKING_DIR}}
+        run: |
+          dotnet pack --configuration Release -p:PackageVersion=${{ steps.version.outputs.version-without-v }}
+          dotnet nuget push **/*.nupkg --api-key ${{secrets.NUGET_API_KEY}}

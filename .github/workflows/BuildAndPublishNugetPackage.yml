@@ -49,4 +49,4 @@ jobs:
         working-directory: ${{env.WORKING_DIR}}
         run: |
           dotnet pack --configuration Release -p:PackageVersion=${{ steps.version.outputs.version-without-v }}
-          dotnet nuget push **/*.nupkg --api-key ${{secrets.NUGET_API_KEY}}
+          dotnet nuget push **/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
